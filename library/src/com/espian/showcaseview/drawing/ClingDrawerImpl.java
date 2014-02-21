@@ -1,12 +1,7 @@
 package com.espian.showcaseview.drawing;
 
 import android.content.res.Resources;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.Log;
@@ -15,6 +10,7 @@ import com.github.espiandev.showcaseview.R;
 
 /**
  * Created by curraa01 on 13/10/2013.
+ * Modified by kateLee on 21/02/2014.
  */
 public class ClingDrawerImpl implements ClingDrawer {
 
@@ -89,6 +85,53 @@ public class ClingDrawerImpl implements ClingDrawer {
 
         return true;
 
+    }
+
+    /**
+     * Creates a {@link android.graphics.Rect} which represents the area the showcase covers. Used
+     * to calculate where best to place the text
+     *
+     * @return true if voidedArea has changed, false otherwise.
+     */
+    @Override
+    public boolean calculateShowcaseRect(int left, int top, int right, int bottom) {
+        if (mShowcaseRect == null) {
+            mShowcaseRect = new Rect();
+        }
+
+        boolean changed = mShowcaseRect.left != left ||
+                mShowcaseRect.right != right ||
+                mShowcaseRect.top != top ||
+                mShowcaseRect.bottom != bottom;
+
+        if(!changed)
+            return false;
+
+        Log.d("ShowcaseView", "Recalculated");
+
+        mShowcaseRect.left = left;
+        mShowcaseRect.top = top;
+        mShowcaseRect.right = right;
+        mShowcaseRect.bottom = bottom;
+
+        return true;
+    }
+
+    @Override
+    public void eraseCircle(Canvas canvas, float x, float y, float radius) {
+        canvas.drawCircle(x, y, radius, mEraser);
+    }
+
+    @Override
+    public void eraseRectangle(Canvas canvas, float left, float top,
+                               float right, float bottom) {
+        canvas.drawRect(left, top, right, bottom, mEraser);
+    }
+
+    @Override
+    public void eraseRoundRectangle(Canvas canvas, float left, float top,
+                                    float right, float bottom, float radius) {
+        canvas.drawRoundRect(new RectF(left, top, right, bottom), radius, radius, mEraser);
     }
 
     @Override
