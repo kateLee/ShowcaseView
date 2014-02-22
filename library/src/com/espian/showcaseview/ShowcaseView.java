@@ -464,13 +464,30 @@ public class ShowcaseView extends RelativeLayout
             return;
         }
 
-        boolean recalculatedCling = mShowcaseDrawer.calculateShowcaseRect(showcaseX, showcaseY);
-        boolean recalculateText = recalculatedCling || mAlteredText;
+        boolean recalculatedCling = getShapeViewType(mOptions.shapeView) == ShapeType.POINT?
+                mShowcaseDrawer.calculateShowcaseRect(showcaseX, showcaseY):
+                mShowcaseDrawer.calculateShowcaseRect(showcaseX, showcaseY, showcaseRight, showcaseBottom);        boolean recalculateText = recalculatedCling || mAlteredText;
         mAlteredText = false;
 
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.HONEYCOMB && !mHasNoTarget) {
-        	Path path = new Path();
-            path.addCircle(showcaseX, showcaseY, showcaseRadius, Path.Direction.CW);
+            Path path = new Path();
+            if (getShapeViewType(mOptions.shapeView) == ShapeType.POINT)
+            {
+                path.addCircle(showcaseX, showcaseY, showcaseRadius, Path.Direction.CW);
+            }
+            else
+            {
+                RectF rectF = new RectF(showcaseX, showcaseY, showcaseRight, showcaseBottom);
+                if (mOptions.shapeView == ShapeView.SHAPE_RECTANGLE)
+                {
+                    path.addRect(rectF, Path.Direction.CW);
+                }
+                else if (mOptions.shapeView == ShapeView.SHAPE_ROUND_RECTANGLE)
+                {
+                    int r = Math.min((showcaseRight-showcaseX)/5, (showcaseBottom-showcaseY)/5);
+                    path.addRoundRect(rectF, r, r, Path.Direction.CW);
+                }
+            }
             canvas.clipPath(path, Op.DIFFERENCE);
         }
 
