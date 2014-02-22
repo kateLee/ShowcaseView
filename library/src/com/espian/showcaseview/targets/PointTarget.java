@@ -1,6 +1,7 @@
 package com.espian.showcaseview.targets;
 
 import android.graphics.Point;
+import android.graphics.RectF;
 
 public class PointTarget implements Target {
 
@@ -17,5 +18,10 @@ public class PointTarget implements Target {
     @Override
     public Point getPoint() {
         return mPoint;
+    }
+
+    @Deprecated
+    public RectF getRectF() {
+        return null;
     }
 }

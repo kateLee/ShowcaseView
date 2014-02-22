@@ -4,13 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Point;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
+import android.graphics.*;
 import android.graphics.Region.Op;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -35,6 +29,7 @@ import com.espian.showcaseview.drawing.TextDrawerImpl;
 import com.espian.showcaseview.targets.Target;
 import com.espian.showcaseview.utils.Calculator;
 import com.espian.showcaseview.utils.PointAnimator;
+import com.espian.showcaseview.utils.RectAnimator;
 import com.github.espiandev.showcaseview.R;
 import com.nineoldandroids.animation.Animator;
 
@@ -59,12 +54,40 @@ public class ShowcaseView extends RelativeLayout
     public static final int ITEM_ACTION_ITEM = 3;
     public static final int ITEM_ACTION_OVERFLOW = 6;
 
+    public enum ShapeType {
+        POINT, RECT
+    }
+    public enum ShapeView
+    {
+        SHAPE_ITEM, SHAPE_CIRCLE, SHAPE_RECTANGLE, SHAPE_ROUND_RECTANGLE
+    }
+
+    public ShapeType getShapeViewType(ShapeView shapeView)
+    {
+        ShapeType shapeType;
+        switch (shapeView)
+        {
+
+            case SHAPE_RECTANGLE:
+            case SHAPE_ROUND_RECTANGLE:
+                shapeType = ShapeType.RECT;
+                break;
+            case SHAPE_ITEM:
+            case SHAPE_CIRCLE:
+            default:
+                shapeType = ShapeType.POINT;
+                break;
+        }
+        return shapeType;
+    }
     protected static final String PREFS_SHOWCASE_INTERNAL = "showcase_internal";
     public static final int INNER_CIRCLE_RADIUS = 94;
     private static final Interpolator INTERPOLATOR = new AccelerateDecelerateInterpolator();
 
     private int showcaseX = -1;
     private int showcaseY = -1;
+    private int showcaseRight = -1;
+    private int showcaseBottom = -1;
     private float showcaseRadius = -1;
     private float metricScale = 1.0f;
     private float legacyShowcaseX = -1;
@@ -87,6 +110,11 @@ public class ShowcaseView extends RelativeLayout
     public static final Target NONE = new Target() {
         @Override
         public Point getPoint() {
+            return null;
+        }
+
+        @Override
+        public RectF getRectF() {
             return null;
         }
     };
@@ -231,6 +259,18 @@ public class ShowcaseView extends RelativeLayout
         invalidate();
     }
 
+    public void setShowcasePosition(RectF rectF) {
+        if (isRedundant) {
+            return;
+        }
+        showcaseX = (int) rectF.left;
+        showcaseY = (int) rectF.top;
+        showcaseRight = (int) rectF.right;
+        showcaseBottom = (int) rectF.bottom;
+        //init();
+        invalidate();
+    }
+
     public void setShowcase(final Target target) {
         setShowcase(target, false);
     }
@@ -239,20 +279,41 @@ public class ShowcaseView extends RelativeLayout
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                Point targetPoint = target.getPoint();
-                if (targetPoint != null) {
-                    mHasNoTarget = false;
-                    if (animate) {
-                        Animator animator = PointAnimator.ofPoints(ShowcaseView.this, targetPoint);
-                        animator.setDuration(getConfigOptions().fadeInDuration);
-                        animator.setInterpolator(INTERPOLATOR);
-                        animator.start();
+                if (getShapeViewType(mOptions.shapeView)==ShapeType.POINT)
+                {
+                    Point targetPoint = target.getPoint();
+                    if (targetPoint != null) {
+                        mHasNoTarget = false;
+                        if (animate) {
+                            Animator animator = PointAnimator.ofPoints(ShowcaseView.this, targetPoint);
+                            animator.setDuration(getConfigOptions().fadeInDuration);
+                            animator.setInterpolator(INTERPOLATOR);
+                            animator.start();
+                        } else {
+                            setShowcasePosition(targetPoint);
+                        }
                     } else {
-                        setShowcasePosition(targetPoint);
+                        mHasNoTarget = true;
+                        invalidate();
                     }
-                } else {
-                    mHasNoTarget = true;
-                    invalidate();
+                }
+                else if (getShapeViewType(mOptions.shapeView)==ShapeType.RECT)
+                {
+                    RectF targetRectF = target.getRectF();
+                    if (targetRectF != null) {
+                        mHasNoTarget = false;
+                        if (animate) {
+                            Animator animator = RectAnimator.ofRects(ShowcaseView.this, targetRectF);
+                            animator.setDuration(getConfigOptions().fadeInDuration);
+                            animator.setInterpolator(INTERPOLATOR);
+                            animator.start();
+                        } else {
+                            setShowcasePosition(targetRectF);
+                        }
+                    } else {
+                        mHasNoTarget = true;
+                        invalidate();
+                    }
                 }
             }
         }, 100);
@@ -270,12 +331,28 @@ public class ShowcaseView extends RelativeLayout
         setShowcasePosition(showcaseX, y);
     }
 
+    public void setShowcaseRight(int x) {
+        setShowcasePosition(new RectF(showcaseX, showcaseY, x, showcaseBottom));
+    }
+
+    public void setShowcaseBottom(int y) {
+        setShowcasePosition(new RectF(showcaseX, showcaseY, showcaseRight, y));
+    }
+
     public int getShowcaseX() {
         return showcaseX;
     }
 
     public int getShowcaseY() {
         return showcaseY;
+    }
+
+    public int getShowcaseRight() {
+        return showcaseRight;
+    }
+
+    public int getShowcaseBottom() {
+        return showcaseBottom;
     }
 
     @Deprecated
@@ -402,7 +479,24 @@ public class ShowcaseView extends RelativeLayout
 
         // Draw the showcase drawable
         if (!mHasNoTarget) {
-            mShowcaseDrawer.drawShowcase(canvas, showcaseX, showcaseY, scaleMultiplier, showcaseRadius);
+            switch (mOptions.shapeView)
+            {
+                case SHAPE_ITEM:
+                    mShowcaseDrawer.drawShowcase(canvas, showcaseX, showcaseY, scaleMultiplier, showcaseRadius);
+                    break;
+                case SHAPE_CIRCLE:
+                    mShowcaseDrawer.eraseCircle(canvas, showcaseX, showcaseY, showcaseRadius);
+                    break;
+                case SHAPE_RECTANGLE:
+                    mShowcaseDrawer.eraseRectangle(canvas, showcaseX, showcaseY, showcaseRight, showcaseBottom);
+                    break;
+                case SHAPE_ROUND_RECTANGLE:
+                    int r = Math.min((showcaseRight-showcaseX)/5, (showcaseBottom-showcaseY)/5);
+                    mShowcaseDrawer.eraseRoundRectangle(canvas, showcaseX, showcaseY, showcaseRight, showcaseBottom, r);
+                    break;
+                default:
+                    break;
+            }
         }
 
         // Draw the text on the screen, recalculating its position if necessary
@@ -900,6 +994,11 @@ public class ShowcaseView extends RelativeLayout
          * Whether the text should be centered or stretched in the available space
          */
         public boolean centerText = false;
+
+        /**
+         * Cling shape to draw
+         */
+        public ShapeView shapeView = ShapeView.SHAPE_ITEM;
     }
 
     public float getScaleMultiplier() {

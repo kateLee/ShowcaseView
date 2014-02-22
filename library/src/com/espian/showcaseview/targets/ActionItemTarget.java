@@ -2,6 +2,7 @@ package com.espian.showcaseview.targets;
 
 import android.app.Activity;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.view.ViewParent;
 
 import com.espian.showcaseview.actionbar.ActionBarViewWrapper;
@@ -23,6 +24,12 @@ public class ActionItemTarget implements Target {
     public Point getPoint() {
         setUp();
         return new ViewTarget(mActionBarWrapper.getActionItem(mItemId)).getPoint();
+    }
+
+    @Override
+    public RectF getRectF() {
+        setUp();
+        return new ViewTarget(mActionBarWrapper.getActionItem(mItemId)).getRectF();
     }
 
     protected void setUp() {

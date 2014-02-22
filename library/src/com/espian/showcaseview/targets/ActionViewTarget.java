@@ -2,6 +2,7 @@ package com.espian.showcaseview.targets;
 
 import android.app.Activity;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.view.ViewParent;
 
 import com.espian.showcaseview.actionbar.ActionBarViewWrapper;
@@ -50,6 +51,33 @@ public class ActionViewTarget implements Target {
 
         }
         return internal.getPoint();
+    }
+
+    @Override
+    public RectF getRectF() {
+
+        Target internal = null;
+        setUp();
+        switch (mType) {
+
+            case SPINNER:
+                internal = new ViewTarget(mActionBarWrapper.getSpinnerView());
+                break;
+
+            case HOME:
+                internal = new ViewTarget(mReflector.getHomeButton());
+                break;
+
+            case OVERFLOW:
+                internal = new ViewTarget(mActionBarWrapper.getOverflowView());
+                break;
+
+            case TITLE:
+                internal = new ViewTarget(mActionBarWrapper.getTitleView());
+                break;
+
+        }
+        return internal.getRectF();
     }
 
     public enum Type {

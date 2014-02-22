@@ -2,6 +2,7 @@ package com.espian.showcaseview.targets;
 
 import android.app.Activity;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.view.View;
 
 public class ViewTarget implements Target {
@@ -23,5 +24,11 @@ public class ViewTarget implements Target {
         int x = location[0] + mView.getWidth() / 2;
         int y = location[1] + mView.getHeight() / 2;
         return new Point(x, y);
+    }
+
+    public RectF getRectF() {
+        int[] location = new int[2];
+        mView.getLocationInWindow(location);
+        return new RectF(location[0], location[1], location[0] + mView.getWidth(), location[1] + mView.getHeight());
     }
 }
